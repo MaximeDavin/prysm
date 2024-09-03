@@ -48,7 +48,7 @@ type Options struct {
 	MsgMax    int
 }
 
-func fullClose(t *testing.T, s transport.MuxedStream) {
+func fullClose(t *testing.T, s transport.Stream) {
 	// if err := s.CloseWrite(); err != nil {
 	// 	t.Error(err)
 	// 	s.Reset()
@@ -76,14 +76,14 @@ func randBuf(size int) []byte {
 	return randomness[start : start+size]
 }
 
-func echoStream(t *testing.T, s transport.MuxedStream) {
+func echoStream(t *testing.T, s transport.Stream) {
 	// echo everything
 	if _, err := io.Copy(s, s); err != nil {
 		t.Error(err)
 	}
 }
 
-func echo(t *testing.T, c transport.UpgradedConn) {
+func echo(t *testing.T, c transport.Conn) {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 	for {
@@ -134,7 +134,7 @@ func SubtestStress(t *testing.T, ta, tb transport.Transport, maddr ma.Multiaddr,
 		rateLimitChan <- struct{}{}
 	}
 
-	writeStream := func(s transport.MuxedStream, bufs chan<- []byte) {
+	writeStream := func(s transport.Stream, bufs chan<- []byte) {
 		for i := 0; i < opt.MsgNum; i++ {
 			buf := randBuf(msgsize)
 			bufs <- buf
@@ -145,7 +145,7 @@ func SubtestStress(t *testing.T, ta, tb transport.Transport, maddr ma.Multiaddr,
 		}
 	}
 
-	readStream := func(s transport.MuxedStream, bufs <-chan []byte) {
+	readStream := func(s transport.Stream, bufs <-chan []byte) {
 		buf2 := make([]byte, msgsize)
 		i := 0
 		for buf1 := range bufs {
@@ -249,7 +249,7 @@ func SubtestStreamOpenStress(t *testing.T, ta, tb transport.Transport, maddr ma.
 	}
 
 	var (
-		connA, connB transport.UpgradedConn
+		connA, connB transport.Conn
 	)
 
 	accepted := make(chan error, 1)

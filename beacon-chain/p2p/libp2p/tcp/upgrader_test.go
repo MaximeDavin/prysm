@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/network"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/tcp"
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/transport"
 
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
@@ -26,7 +26,7 @@ func TestIncompatibleOutboundSecurity(t *testing.T) {
 	conn, err := manet.Dial(l.Multiaddr())
 	require.NoError(t, err)
 
-	_, err = tcp.Upgrade(context.Background(), dtcp, conn, "", network.DirOutbound)
+	_, err = tcp.Upgrade(context.Background(), dtcp, conn, "", transport.DirOutbound)
 	require.ErrorContains(t, "/invalidSecurity/1.0", err)
 }
 
@@ -44,7 +44,7 @@ func TestIncompatibleOutboundStream(t *testing.T) {
 	conn, err := manet.Dial(l.Multiaddr())
 	require.NoError(t, err)
 
-	_, err = tcp.Upgrade(context.Background(), dtcp, conn, "", network.DirOutbound)
+	_, err = tcp.Upgrade(context.Background(), dtcp, conn, "", transport.DirOutbound)
 	require.ErrorContains(t, "/invalidStream/1.0", err)
 }
 
@@ -68,7 +68,7 @@ func TestIncompatibleInboundSecurity(t *testing.T) {
 	options := tcp.DefaultTcpTransportOptions
 	options.SecuritySupported = "/invalid/1.0"
 	ltcp := createTransportWithOptions(t, options)
-	_, err = tcp.Upgrade(context.Background(), ltcp, conn, "", network.DirInbound)
+	_, err = tcp.Upgrade(context.Background(), ltcp, conn, "", transport.DirInbound)
 	require.ErrorContains(t, "/invalid/1.0", err)
 }
 
@@ -86,7 +86,7 @@ func TestUpgradeSuccessfullyOutbound(t *testing.T) {
 	conn, err := manet.Dial(l.Multiaddr())
 	require.NoError(t, err)
 
-	_, err = tcp.Upgrade(context.Background(), dtcp, conn, "", network.DirOutbound)
+	_, err = tcp.Upgrade(context.Background(), dtcp, conn, "", transport.DirOutbound)
 	require.NoError(t, err)
 }
 
@@ -104,6 +104,6 @@ func TestUpgradeSuccessfullyInbound(t *testing.T) {
 	require.NoError(t, err)
 
 	ltcp := createTransport(t)
-	_, err = tcp.Upgrade(context.Background(), ltcp, conn, "", network.DirInbound)
+	_, err = tcp.Upgrade(context.Background(), ltcp, conn, "", transport.DirInbound)
 	require.NoError(t, err)
 }

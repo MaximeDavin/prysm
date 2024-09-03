@@ -16,16 +16,14 @@ import (
 func createTransport(t *testing.T) *tcp.TcpTransport {
 	t.Helper()
 
-	tcp, err := tcp.NewTCPTransport()
-	require.NoError(t, err)
+	tcp := tcp.NewTCPTransport()
 	return tcp
 }
 
 func createTransportWithOptions(t *testing.T, options tcp.TcpTransportOptions) *tcp.TcpTransport {
 	t.Helper()
 
-	tcp, err := tcp.NewTCPTransportWithOptions(options)
-	require.NoError(t, err)
+	tcp := tcp.NewTCPTransportWithOptions(options)
 	return tcp
 }
 
@@ -38,7 +36,7 @@ func createListener(t *testing.T, tcp *tcp.TcpTransport) transport.Listener {
 	return l
 }
 
-func testConn(t *testing.T, clientConn, serverConn transport.UpgradedConn) {
+func testConn(t *testing.T, clientConn, serverConn transport.Conn) {
 	t.Helper()
 
 	cstr, err := clientConn.OpenStream(context.Background())
@@ -54,6 +52,13 @@ func testConn(t *testing.T, clientConn, serverConn transport.UpgradedConn) {
 	_, err = sstr.Read(b)
 	require.NoError(t, err)
 	require.DeepEqual(t, []byte("foobar"), b)
+
+	_, err = sstr.Write([]byte("pong"))
+	require.NoError(t, err)
+	c := make([]byte, 4)
+	_, err = cstr.Read(c)
+	require.NoError(t, err)
+	require.DeepEqual(t, []byte("pong"), c)
 }
 
 func TestAcceptSingleConn(t *testing.T) {
@@ -190,7 +195,7 @@ func TestListenerCloseClosesQueued(t *testing.T) {
 	tcp := createTransport(t)
 	l := createListener(t, tcp)
 
-	var conns []transport.UpgradedConn
+	var conns []transport.Conn
 	for i := 0; i < 10; i++ {
 		conn, err := tcp.Dial(context.Background(), l.Multiaddr(), "")
 		require.NoError(t, err)

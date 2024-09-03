@@ -15,12 +15,12 @@ import (
 // CapableConn, which means that they have been upgraded to support
 // stream multiplexing and connection security (encryption and authentication).
 type Transport interface {
-	Dial(ctx context.Context, addr ma.Multiaddr, pid peer.ID) (UpgradedConn, error)
+	Dial(ctx context.Context, addr ma.Multiaddr, pid peer.ID) (Conn, error)
 	Listen(addr ma.Multiaddr) (Listener, error)
 }
 
 type Listener interface {
-	Accept() (UpgradedConn, error)
+	Accept() (Conn, error)
 	Close() error
 	Multiaddr() ma.Multiaddr
 }

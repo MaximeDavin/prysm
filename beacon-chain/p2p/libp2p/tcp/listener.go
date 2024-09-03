@@ -3,7 +3,6 @@ package tcp
 import (
 	"context"
 
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/network"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/transport"
 
 	manet "github.com/multiformats/go-multiaddr/net"
@@ -13,7 +12,7 @@ type TcpListener struct {
 	manet.Listener
 	// Every accepted and upgraded connection in the listen loop's
 	// goroutines are sent to this channel
-	incoming chan transport.UpgradedConn
+	incoming chan transport.Conn
 	// Store error happening during listen loop
 	errs chan error
 	// We keep a reference to the transport object to access muxers settings
@@ -27,7 +26,7 @@ func NewTCPListener() (*TcpTransport, error) {
 }
 
 // Accepts incoming connections from the listen loop
-func (l *TcpListener) Accept() (transport.UpgradedConn, error) {
+func (l *TcpListener) Accept() (transport.Conn, error) {
 	select {
 	case c := <-l.incoming:
 		return c, nil
@@ -57,7 +56,7 @@ func (l *TcpListener) upgrade(conn manet.Conn) {
 	ctx, cancel := context.WithTimeout(context.Background(), l.t.AcceptTimeout)
 	defer cancel()
 
-	sconn, err := Upgrade(ctx, l.t, conn, "", network.DirInbound)
+	sconn, err := Upgrade(ctx, l.t, conn, "", transport.DirInbound)
 	if err != nil {
 		l.errs <- err
 		return

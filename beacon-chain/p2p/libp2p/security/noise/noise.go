@@ -5,7 +5,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/network"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/peer"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/transport"
 
@@ -24,7 +23,7 @@ type secureConn struct {
 	remoteID     peer.ID
 }
 
-func Secure(ctx context.Context, insecureConn manet.Conn, direction network.Direction, pid peer.ID) (transport.SecureConn, error) {
+func Secure(ctx context.Context, insecureConn manet.Conn, direction transport.Direction, pid peer.ID) (transport.SecureConn, error) {
 	sconn := &secureConn{
 		insecureConn: insecureConn,
 		localID:      "",

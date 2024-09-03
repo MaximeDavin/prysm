@@ -10,7 +10,6 @@ import (
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/transport"
 
 	ma "github.com/multiformats/go-multiaddr"
-	"github.com/prysmaticlabs/prysm/v5/testing/require"
 )
 
 func getFunctionName(i interface{}) string {
@@ -33,10 +32,8 @@ func TestTcpTransport(t *testing.T) {
 		// SubtestStreamReset,
 	}
 
-	ta, err := tcp.NewTCPTransport()
-	require.NoError(t, err)
-	tb, err := tcp.NewTCPTransport()
-	require.NoError(t, err)
+	ta := tcp.NewTCPTransport()
+	tb := tcp.NewTCPTransport()
 
 	zero := "/ip4/127.0.0.1/tcp/0"
 	maddr, err := ma.NewMultiaddr(zero)
