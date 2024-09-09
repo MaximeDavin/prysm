@@ -32,7 +32,7 @@ func TestStreamMuxerNegociation(t *testing.T) {
 			Name:             "server does not support yamux",
 			ServerPreference: "unsupported_proto",
 			ClientPreference: yamux.ID,
-			Error:            "unsupported_proto",
+			Error:            "yamux",
 		},
 		{
 			Name:             "client does not support yamux",
@@ -56,13 +56,11 @@ func TestStreamMuxerNegociation(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			soptions := tcp.DefaultTcpTransportOptions
 			soptions.StreamSupported = tc.ServerPreference
-			server, err := tcp.NewTCPTransportWithOptions(soptions)
-			require.NoError(t, err)
+			server := tcp.NewTCPTransportWithOptions(soptions)
 
 			coptions := tcp.DefaultTcpTransportOptions
 			coptions.StreamSupported = tc.ClientPreference
-			client, err := tcp.NewTCPTransportWithOptions(coptions)
-			require.NoError(t, err)
+			client := tcp.NewTCPTransportWithOptions(coptions)
 
 			addr, err := ma.NewMultiaddr("/ip4/127.0.0.1/tcp/0")
 			require.NoError(t, err)

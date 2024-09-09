@@ -9,8 +9,8 @@ import (
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/peer"
 )
 
-// A UpgradedConn represents a connection that has been secured and multiplexed
-type UpgradedConn interface {
+// A Conn represents a connection that has been secured and multiplexed
+type Conn interface {
 	MuxedConn
 	SecureConnMixin
 	ConnMultiaddrsMixin
@@ -52,9 +52,9 @@ type MuxedConn interface {
 	// Close closes the stream muxer and the the underlying net.Conn.
 	io.Closer
 	// OpenStream creates a new stream.
-	OpenStream(context.Context) (MuxedStream, error)
+	OpenStream(context.Context) (Stream, error)
 	// AcceptStream accepts a stream opened by the other side.
-	AcceptStream() (MuxedStream, error)
+	AcceptStream() (Stream, error)
 	// IsClosed returns whether a connection is fully closed, so it can
 	// be garbage collected.
 	IsClosed() bool

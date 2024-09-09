@@ -3,13 +3,12 @@ package yamux
 import (
 	"context"
 
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/network"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/transport"
 
 	"github.com/hashicorp/yamux"
 )
 
-var DefaultTransport *Transport
+// var DefaultTransport *Transport
 
 const ID = "/yamux/1.0.0"
 
@@ -17,8 +16,14 @@ const ID = "/yamux/1.0.0"
 // yamux-backed muxed connections.
 type Transport yamux.Config
 
-func Multiplex(conn transport.SecureConn, direction network.Direction) (transport.MuxedConn, error) {
-	session, err := yamux.Client(conn, nil)
+func Multiplex(conn transport.SecureConn, direction transport.Direction) (transport.MuxedConn, error) {
+	var session *yamux.Session
+	var err error
+	if direction == transport.DirOutbound {
+		session, err = yamux.Client(conn, nil)
+	} else {
+		session, err = yamux.Server(conn, nil)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -31,14 +36,14 @@ type yamuxConn struct {
 
 var _ transport.MuxedConn = &yamuxConn{}
 
-func (y *yamuxConn) OpenStream(ctx context.Context) (transport.MuxedStream, error) {
+func (y *yamuxConn) OpenStream(ctx context.Context) (transport.Stream, error) {
 	stream, err := y.Session.OpenStream()
-	return transport.MuxedStream(stream), err
+	return transport.Stream(stream), err
 }
 
-func (y *yamuxConn) AcceptStream() (transport.MuxedStream, error) {
+func (y *yamuxConn) AcceptStream() (transport.Stream, error) {
 	stream, err := y.Session.AcceptStream()
-	return transport.MuxedStream(stream), err
+	return transport.Stream(stream), err
 }
 
 func (y *yamuxConn) Close() error {

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/muxer/yamux"
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/network"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/peer"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/security/noise"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/transport"
@@ -20,6 +19,8 @@ var log = logrus.WithFields(logrus.Fields{
 	"prefix":    "p2p",
 	"transport": "TCP",
 })
+
+const ID = "TCP"
 
 type TcpTransport struct {
 	SecurityMuxer *mss.MultistreamMuxer[string]
@@ -48,11 +49,11 @@ var DefaultTcpTransportOptions TcpTransportOptions = TcpTransportOptions{
 
 var _ transport.Transport = &TcpTransport{}
 
-func NewTCPTransport() (*TcpTransport, error) {
+func NewTCPTransport() *TcpTransport {
 	return NewTCPTransportWithOptions(DefaultTcpTransportOptions)
 }
 
-func NewTCPTransportWithOptions(options TcpTransportOptions) (*TcpTransport, error) {
+func NewTCPTransportWithOptions(options TcpTransportOptions) *TcpTransport {
 	t := &TcpTransport{
 		SecurityMuxer:       mss.NewMultistreamMuxer[string](),
 		StreamMuxer:         mss.NewMultistreamMuxer[string](),
@@ -60,17 +61,17 @@ func NewTCPTransportWithOptions(options TcpTransportOptions) (*TcpTransport, err
 	}
 	t.SecurityMuxer.AddHandler(options.SecuritySupported, nil)
 	t.StreamMuxer.AddHandler(options.StreamSupported, nil)
-	return t, nil
+	return t
 }
 
 // Dial the given multiaddr and upgrade the resulting outbound connection
-func (t *TcpTransport) Dial(ctx context.Context, addr ma.Multiaddr, pid peer.ID) (transport.UpgradedConn, error) {
+func (t *TcpTransport) Dial(ctx context.Context, addr ma.Multiaddr, pid peer.ID) (transport.Conn, error) {
 	var d manet.Dialer
 	conn, err := d.DialContext(ctx, addr)
 	if err != nil {
 		return nil, err
 	}
-	return Upgrade(ctx, t, conn, pid, network.DirOutbound)
+	return Upgrade(ctx, t, conn, pid, transport.DirOutbound)
 }
 
 // Listen returns a listener that listens on the given multiaddr for inbound
@@ -90,7 +91,7 @@ func (t *TcpTransport) Listen(addr ma.Multiaddr) (transport.Listener, error) {
 
 	tcpl := &TcpListener{
 		Listener: l,
-		incoming: make(chan transport.UpgradedConn),
+		incoming: make(chan transport.Conn),
 		errs:     make(chan error),
 		t:        t,
 	}

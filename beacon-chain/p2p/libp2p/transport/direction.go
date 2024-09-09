@@ -1,4 +1,4 @@
-package network
+package transport
 
 // Direction represents which peer in a stream initiated a connection.
 type Direction int

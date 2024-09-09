@@ -26,7 +26,7 @@ func SubtestBasic(t *testing.T, ta, tb transport.Transport, maddr ma.Multiaddr, 
 	defer list.Close()
 
 	var (
-		connA, connB transport.UpgradedConn
+		connA, connB transport.Conn
 		done         = make(chan struct{})
 	)
 	defer func() {
@@ -138,7 +138,7 @@ func SubtestPingPong(t *testing.T, ta, tb transport.Transport, maddr ma.Multiadd
 	defer list.Close()
 
 	var (
-		connA, connB transport.UpgradedConn
+		connA, connB transport.Conn
 	)
 	defer func() {
 		if connA != nil {
