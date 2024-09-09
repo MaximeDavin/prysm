@@ -1,13 +1,15 @@
-package network
+package network_test
 
 import (
 	"context"
 	"io"
 	"testing"
 
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/network"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/peer"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/quic"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/tcp"
+	test "github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/testing"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/transport"
 	"github.com/prysmaticlabs/prysm/v5/testing/require"
 
@@ -15,26 +17,25 @@ import (
 	logTest "github.com/sirupsen/logrus/hooks/test"
 )
 
-func createNetworks(t *testing.T) (*network, *network, *peer.AddrInfo, *peer.AddrInfo) {
+func createNetworks(t *testing.T) (network.Network, network.Network, *peer.AddrInfo, *peer.AddrInfo) {
 	t.Helper()
 
-	n1 := NewNetwork()
-	defer n1.Close()
+	h1 := test.CreateHost(t)
+	defer h1.Close()
+	n1 := h1.Network()
 
-	n2 := NewNetwork()
-	defer n2.Close()
-
-	addr, err := ma.NewMultiaddr("/ip4/127.0.0.1/tcp/0")
-	require.NoError(t, err)
+	h2 := test.CreateHost(t)
+	defer h2.Close()
+	n2 := h2.Network()
 
 	n1pinfo := &peer.AddrInfo{
-		ID:    "n1",
-		Addrs: []ma.Multiaddr{addr},
+		ID:    n1.LocalPeer(),
+		Addrs: n1.Addrs(),
 	}
 
 	n2pinfo := &peer.AddrInfo{
-		ID:    "n2",
-		Addrs: []ma.Multiaddr{addr},
+		ID:    n2.LocalPeer(),
+		Addrs: n2.Addrs(),
 	}
 
 	return n1, n2, n1pinfo, n2pinfo
@@ -45,7 +46,6 @@ func TestNetworkSimple(t *testing.T) {
 	n2.Listen(n1pinfo.Addrs...)
 	defer n2.Close()
 
-	n2pinfo.Addrs = []ma.Multiaddr{n2.tcpListener.Multiaddr()}
 	require.NoError(t, n1.Connect(context.Background(), *n2pinfo))
 
 	piper, pipew := io.Pipe()
@@ -85,15 +85,16 @@ func TestConnectReuseConnection(t *testing.T) {
 	defer n2.Close()
 
 	// No connection to n2
-	require.IsNil(t, n1.conns[n2pinfo.ID])
-	n2pinfo.Addrs = []ma.Multiaddr{n2.tcpListener.Multiaddr()}
+	require.Equal(t, 0, len(n1.ConnsToPeer(n2pinfo.ID)))
+	// n2pinfo.Addrs = []ma.Multiaddr{n2.tcpListener.Multiaddr()}
 	require.NoError(t, n1.Connect(context.Background(), *n2pinfo))
 
 	// There is one connection to n2
-	require.NotNil(t, n1.conns[n2pinfo.ID])
+	require.NotNil(t, n1.ConnsToPeer(n2pinfo.ID))
+	require.Equal(t, 1, len(n1.ConnsToPeer(n2pinfo.ID)))
 
 	// We keep a pointer to the conn for later comparison
-	conn := n1.conns[n2pinfo.ID]
+	conn := n1.ConnsToPeer(n2pinfo.ID)[0]
 
 	// Removing n2 address guarantees that DialPeer will fail. If connect return
 	// no error, it means that DialPeer was not called
@@ -101,7 +102,7 @@ func TestConnectReuseConnection(t *testing.T) {
 	require.NoError(t, n1.Connect(context.Background(), *n2pinfo))
 
 	// The  peer was not dialed, the previous connection was reused
-	require.Equal(t, n1.conns[n2pinfo.ID], conn)
+	require.Equal(t, n1.ConnsToPeer(n2pinfo.ID)[0], conn)
 }
 
 // Check that peer's addresses are added to the peerstore when Connect
@@ -111,14 +112,18 @@ func TestConnectAbsorbPeer(t *testing.T) {
 	n2.Listen(n1pinfo.Addrs...)
 	defer n2.Close()
 
-	n2pinfo.Addrs = []ma.Multiaddr{n2.tcpListener.Multiaddr()}
+	// n2pinfo.Addrs = []ma.Multiaddr{n2.tcpListener.Multiaddr()}
 	require.NoError(t, n1.Connect(context.Background(), *n2pinfo))
-	require.DeepEqual(t, n2pinfo.Addrs, n1.peerstore.Addrs(n2pinfo.ID))
+	require.DeepEqual(t, n2pinfo.Addrs, n1.Peerstore().Addrs(n2pinfo.ID))
 }
 
 // Check that the DialPeer error bubbles up correctly
 func TestConnectErrorDialFail(t *testing.T) {
 	n1, _, _, n2pinfo := createNetworks(t)
+
+	// Try to dial an address that n2 does not listen to
+	addr, _ := ma.NewMultiaddr("/ip4/127.0.0.2/tcp/1")
+	n2pinfo.Addrs = []ma.Multiaddr{addr}
 	require.ErrorContains(t, "Failed to dial", n1.Connect(context.Background(), *n2pinfo))
 }
 
@@ -139,7 +144,7 @@ func TestDialPeerAllAddressesFail(t *testing.T) {
 	addr1, _ := ma.NewMultiaddr("/ip4/127.0.0.1/tcp/1")
 	addr2, _ := ma.NewMultiaddr("/ip4/127.0.0.1/tcp/2")
 	n2pinfo.Addrs = []ma.Multiaddr{addr1, addr2}
-	n1.peerstore.SetAddrs(*n2pinfo)
+	n1.Peerstore().SetAddrs(*n2pinfo)
 
 	_, err := n1.DialPeer(context.Background(), n2pinfo.ID)
 	require.LogsContain(t, hook, "/ip4/127.0.0.1/tcp/1")
@@ -153,8 +158,8 @@ func TestDialPeerTCPDialer(t *testing.T) {
 	n2.Listen(n2pinfo.Addrs...)
 	n2.Close()
 
-	n2pinfo.Addrs = []ma.Multiaddr{n2.tcpListener.Multiaddr()}
-	n1.peerstore.SetAddrs(*n2pinfo)
+	// n2pinfo.Addrs = []ma.Multiaddr{n2.tcpListener.Multiaddr()}
+	n1.Peerstore().SetAddrs(*n2pinfo)
 	_, err := n1.DialPeer(context.Background(), n2pinfo.ID)
 	require.NoError(t, err)
 }
@@ -222,7 +227,7 @@ func TestGetTransportID(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			addr, err := ma.NewMultiaddr(tc.Addr)
 			require.NoError(t, err)
-			id, err := getTransportID(addr)
+			id, err := network.GetTransportID(addr)
 			if tc.Error != "" {
 				require.ErrorContains(t, tc.Error, err)
 			} else {

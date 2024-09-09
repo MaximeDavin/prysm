@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/config"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/peer"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/peerstore"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/protocol"
@@ -26,13 +27,18 @@ type Network interface {
 	NewStream(ctx context.Context, pid peer.ID, protos ...protocol.ID) (transport.Stream, error)
 	DialPeer(ctx context.Context, pid peer.ID) (transport.Conn, error)
 	SetStreamHandler(proto protocol.ID, handler transport.StreamHandler)
+	RemoveStreamHandler(proto protocol.ID)
 	Close()
 	Peerstore() *peerstore.PeerStore
 	// ConnsToPeer returns the connections in this Network for given peer.
 	ConnsToPeer(p peer.ID) []transport.Conn
+	LocalPeer() peer.ID
+	Addrs() []ma.Multiaddr
+	Mux() *mss.MultistreamMuxer[protocol.ID]
 }
 
 type network struct {
+	local        peer.ID
 	conns        map[peer.ID]transport.Conn
 	tcpTransport transport.Transport
 	tcpListener  transport.Listener
@@ -44,15 +50,22 @@ type network struct {
 
 var _ Network = (*network)(nil)
 
-func NewNetwork() *network {
+func NewNetwork(cfg *config.Config) (*network, error) {
+
 	n := &network{
+		local:        cfg.PeerId,
 		conns:        make(map[peer.ID]transport.Conn),
 		tcpTransport: tcp.NewTCPTransport(),
 		peerstore:    peerstore.NewPeerStore(),
 		mux:          mss.NewMultistreamMuxer[protocol.ID](),
 	}
 
-	return n
+	err := n.Listen(cfg.ListenAddrs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return n, nil
 }
 
 func (n *network) Connect(ctx context.Context, pinfo peer.AddrInfo) error {
@@ -113,7 +126,7 @@ func (n *network) DialPeer(ctx context.Context, pid peer.ID) (transport.Conn, er
 	// on the discovery service
 	// TODO: we could dial concurrently and return the fastest
 	for _, addr := range addrs {
-		id, err := getTransportID(addr)
+		id, err := GetTransportID(addr)
 		if err != nil {
 			log.WithError(err).Infof("Failed to dial peer %s with address %s", pid, addr)
 			continue
@@ -133,7 +146,7 @@ func (n *network) DialPeer(ctx context.Context, pid peer.ID) (transport.Conn, er
 
 func (n *network) Listen(addrs ...ma.Multiaddr) error {
 	for _, addr := range addrs {
-		id, err := getTransportID(addr)
+		id, err := GetTransportID(addr)
 		if err != nil {
 			return err
 		}
@@ -154,7 +167,7 @@ func (n *network) Listen(addrs ...ma.Multiaddr) error {
 // Return the Transport matching the address
 // Example: /ip4/1.2.3.4./tcp/5678 => TCP
 // Example: /ip4/1.2.3.4/udp/5678/quic-v1 => QUIC
-func getTransportID(addr ma.Multiaddr) (string, error) {
+func GetTransportID(addr ma.Multiaddr) (string, error) {
 	hasProto := func(code int) bool {
 		_, err := addr.ValueForProtocol(code)
 		return err == nil
@@ -240,6 +253,10 @@ func (n *network) SetStreamHandler(proto protocol.ID, handler transport.StreamHa
 	})
 }
 
+func (n *network) RemoveStreamHandler(proto protocol.ID) {
+	n.mux.RemoveHandler(proto)
+}
+
 func (n *network) Close() {
 	// for _, conn := range n.conns {
 	// 	conn.Close()
@@ -257,4 +274,17 @@ func (n *network) ConnsToPeer(pid peer.ID) []transport.Conn {
 		return []transport.Conn{}
 	}
 	return []transport.Conn{conn}
+}
+
+func (n *network) LocalPeer() peer.ID {
+	return n.local
+}
+
+func (n *network) Addrs() []ma.Multiaddr {
+	// TODO(quic): Return quicListener addr too
+	return []ma.Multiaddr{n.tcpListener.Multiaddr()}
+}
+
+func (n *network) Mux() *mss.MultistreamMuxer[protocol.ID] {
+	return n.mux
 }
