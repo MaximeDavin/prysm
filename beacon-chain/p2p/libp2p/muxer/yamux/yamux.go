@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/yamux"
 )
 
-// var DefaultTransport *Transport
+var DefaultTransport *Transport
 
 const ID = "/yamux/1.0.0"
 

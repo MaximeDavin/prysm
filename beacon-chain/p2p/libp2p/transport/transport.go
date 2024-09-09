@@ -3,9 +3,8 @@ package transport
 import (
 	"context"
 
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/peer"
-
 	ma "github.com/multiformats/go-multiaddr"
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/peer"
 )
 
 // The Transport interface allows you to open connections to other peers

@@ -1,10 +1,18 @@
 package peer
 
 import (
+	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/crypto"
+
+	b58 "github.com/mr-tron/base58/base58"
 	ma "github.com/multiformats/go-multiaddr"
+	mh "github.com/multiformats/go-multihash"
 )
 
 type ID string
+
+func (id ID) String() string {
+	return b58.Encode([]byte(id))
+}
 
 // AddrInfo is a small struct used to pass around a peer with
 // a set of addresses.
@@ -28,4 +36,14 @@ func SplitAddr(m ma.Multiaddr) (transport ma.Multiaddr, id ID) {
 	}
 	id = ID(p2ppart.RawValue()) // already validated by the multiaddr library.
 	return transport, id
+}
+
+// IDFromPublicKey returns the Peer ID corresponding to the public key pk.
+func IDFromPublicKey(pk crypto.PubKey) (ID, error) {
+	b, err := crypto.MarshalPublicKey(pk)
+	if err != nil {
+		return "", err
+	}
+	hash, _ := mh.Sum(b, mh.IDENTITY, -1)
+	return ID(hash), nil
 }
