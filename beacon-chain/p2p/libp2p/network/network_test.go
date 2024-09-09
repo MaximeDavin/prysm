@@ -237,3 +237,11 @@ func TestGetTransportID(t *testing.T) {
 		})
 	}
 }
+
+// Verify that Close can be call multiple time without error
+func TestMultipleClose(t *testing.T) {
+	h := test.CreateHost(t)
+	require.NoError(t, h.Close())
+	require.NoError(t, h.Close())
+	require.NoError(t, h.Close())
+}

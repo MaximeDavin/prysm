@@ -43,7 +43,7 @@ func (l *TcpListener) Serve() {
 		if err != nil {
 			// Temporary errors could be retried here
 			// see https://go.dev/src/net/http/server.go?s=51504:51550#L3335
-			// However it has been depecrated see https://groups.google.com/g/golang-nuts/c/-JcZzOkyqYI/m/xwaZzjCgAwAJ
+			// However it has been deprecated see https://groups.google.com/g/golang-nuts/c/-JcZzOkyqYI/m/xwaZzjCgAwAJ
 			l.errs <- err
 			return
 		}
