@@ -1,39 +1,28 @@
 package libp2p
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/config"
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/crypto"
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/host"
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/peer"
+	"libp2p/config"
+	"libp2p/core/crypto"
+	"libp2p/core/host"
+	"libp2p/core/peer"
 
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-type Option func(cfg *config.Config) error
+type Option = config.Option
 
-func New(opts ...Option) (host.Host, error) {
-	cfg, err := Apply(opts...)
+func New(opts ...Option) (*host.Host, error) {
+	cfg := config.NewConfig()
+	err := cfg.Apply(opts...)
 	if err != nil {
 		return nil, err
 	}
-	return host.NewHost(cfg)
-}
-
-// Apply applies the given options to the config, returning the first error
-// encountered (if any).
-func Apply(opts ...Option) (*config.Config, error) {
-	cfg := config.NewConfig()
-	for _, opt := range opts {
-		if opt == nil {
-			continue
-		}
-		if err := opt(cfg); err != nil {
-			return nil, err
-		}
-	}
-	return cfg, nil
+	h, err := host.NewHost(cfg)
+	return h, err
 }
 
 func DoesNothing(cfg *config.Config) error {
@@ -46,7 +35,7 @@ func Identity(sk crypto.PrivKey) Option {
 		if cfg.PeerKey != nil {
 			return errors.Errorf("cannot specify multiple identities")
 		}
-		peerID, err := peer.IDFromPublicKey(sk)
+		peerID, err := peer.IDFromPrivateKey(sk)
 		if err != nil {
 			return err
 		}
@@ -81,26 +70,19 @@ func ConnectionGater(cg any) Option {
 // Transport configures libp2p to optionally use quic, TCP is always used
 // TODO(quic): Activate quic in settings
 func Transport(constructor any) Option {
-	return func(cfg *config.Config) error {
-		// typ := reflect.ValueOf(constructor).Type()
-		// if typ == reflect.TypeOf(tcp.NewQuicTransport) {
-		// 	cfg.useQuic = true
-		// }
-		return nil
-	}
+	return DoesNothing
+	// return func(cfg *config.Config) error {
+	// 	typ := reflect.ValueOf(constructor).Type()
+	// 	if typ == reflect.TypeOf(quic.NewQuicTransport) {
+	// 		cfg.UseQuic = true
+	// 	}
+	// 	return nil
+	// }
 }
 
-// Muxer configures libp2p to optionally use mplex, yamux is always used
-// TODO(mplex): Activate mplex in settings
-func Muxer(name string, muxer any) Option {
-	return func(cfg *config.Config) error {
-		// typ := reflect.ValueOf(muxer).Type()
-		// if typ == reflect.TypeOf(mplex.DefaultTransport) {
-		// 	cfg.useMplex = true
-		// 	cfg.mplexProto = name
-		// }
-		return nil
-	}
+// Does nothing, it is a libp2p legacy option. Yamux is always used
+func Muxer(name string, constructor any) Option {
+	return DoesNothing
 }
 
 // Does nothing, it is a libp2p legacy option
@@ -141,4 +123,11 @@ func AddrsFactory(factory func(addrs []ma.Multiaddr) []ma.Multiaddr) Option {
 // it is recommended to set limits for libp2p protocol by calling SetDefaultServiceLimits.
 func ResourceManager(rcmgr any) Option {
 	return DoesNothing
+}
+
+func DialTimeout(t time.Duration) Option {
+	return func(cfg *config.Config) error {
+		cfg.DialTimeout = t
+		return nil
+	}
 }

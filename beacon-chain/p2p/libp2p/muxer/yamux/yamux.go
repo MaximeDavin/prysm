@@ -3,7 +3,7 @@ package yamux
 import (
 	"context"
 
-	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/libp2p/transport"
+	"libp2p/core/transport"
 
 	"github.com/hashicorp/yamux"
 )
@@ -38,12 +38,14 @@ var _ transport.MuxedConn = &yamuxConn{}
 
 func (y *yamuxConn) OpenStream(ctx context.Context) (transport.Stream, error) {
 	stream, err := y.Session.OpenStream()
-	return transport.Stream(stream), err
+	s := NewStream(stream)
+	return transport.Stream(s), err
 }
 
 func (y *yamuxConn) AcceptStream() (transport.Stream, error) {
 	stream, err := y.Session.AcceptStream()
-	return transport.Stream(stream), err
+	s := NewStream(stream)
+	return transport.Stream(s), err
 }
 
 func (y *yamuxConn) Close() error {

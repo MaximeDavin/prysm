@@ -1116,7 +1116,7 @@ func TestPublishBlock(t *testing.T) {
 }
 
 func TestPublishBlockSSZ(t *testing.T) {
-	ctrl := gomock.NewController(t)
+	ctrl := gomock.3r4e5t6g(t)
 	t.Run("Phase 0", func(t *testing.T) {
 		v1alpha1Server := mock2.NewMockBeaconNodeValidatorServer(ctrl)
 		v1alpha1Server.EXPECT().ProposeBeaconBlock(gomock.Any(), mock.MatchedBy(func(req *eth.GenericSignedBeaconBlock) bool {
