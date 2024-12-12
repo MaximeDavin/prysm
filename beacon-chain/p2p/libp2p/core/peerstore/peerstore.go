@@ -1,13 +1,13 @@
 package peerstore
 
 import (
-	"libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/sirupsen/logrus"
 )
 
-var log = logrus.WithField("prefix", "libp2p")
+var log = logrus.WithField("prefix", "github.com/libp2p/go-libp2p")
 
 type PeerStore struct {
 	addrs map[peer.ID][]ma.Multiaddr
@@ -47,4 +47,9 @@ func (ps *PeerStore) Addrs(pid peer.ID) []ma.Multiaddr {
 		return []ma.Multiaddr{}
 	}
 	return addrs
+}
+
+// DEPECRATED
+func (ps *PeerStore) PeerInfo(pid peer.ID) peer.AddrInfo {
+	return peer.AddrInfo{ID: pid}
 }

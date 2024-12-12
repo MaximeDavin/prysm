@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/crypto"
 
 	b58 "github.com/mr-tron/base58/base58"
 	ma "github.com/multiformats/go-multiaddr"
@@ -18,11 +18,20 @@ func (id ID) String() string {
 	return b58.Encode([]byte(id))
 }
 
+// MarshalBinary returns the byte representation of the peer ID.
+func (id ID) MarshalBinary() ([]byte, error) {
+	return []byte(id), nil
+}
+
 // AddrInfo is a small struct used to pass around a peer with
 // a set of addresses.
 type AddrInfo struct {
 	ID    ID
 	Addrs []ma.Multiaddr
+}
+
+func (pi AddrInfo) String() string {
+	return fmt.Sprintf("{%v: %v}", pi.ID, pi.Addrs)
 }
 
 // SplitAddr splits a p2p Multiaddr into a transport multiaddr and a peer ID.
@@ -55,6 +64,15 @@ func IDFromPublicKey(pk crypto.PubKey) (ID, error) {
 // IDFromPublicKey returns the Peer ID corresponding to the private key pk.
 func IDFromPrivateKey(pk crypto.PrivKey) (ID, error) {
 	return IDFromPublicKey(pk.GetPublic())
+}
+
+// IDFromBytes casts a byte slice to the ID type, and validates
+// the value to make sure it is a multihash.
+func IDFromBytes(b []byte) (ID, error) {
+	if _, err := mh.Cast(b); err != nil {
+		return ID(""), err
+	}
+	return ID(b), nil
 }
 
 var ErrInvalidAddr = fmt.Errorf("invalid p2p multiaddr")

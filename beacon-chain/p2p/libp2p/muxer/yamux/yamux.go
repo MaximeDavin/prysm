@@ -3,7 +3,8 @@ package yamux
 import (
 	"context"
 
-	"libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/direction"
 
 	"github.com/hashicorp/yamux"
 )
@@ -16,10 +17,10 @@ const ID = "/yamux/1.0.0"
 // yamux-backed muxed connections.
 type Transport yamux.Config
 
-func Multiplex(conn transport.SecureConn, direction transport.Direction) (transport.MuxedConn, error) {
+func Multiplex(conn transport.SecureConn, dir direction.Direction) (transport.MuxedConn, error) {
 	var session *yamux.Session
 	var err error
-	if direction == transport.DirOutbound {
+	if dir == direction.DirOutbound {
 		session, err = yamux.Client(conn, nil)
 	} else {
 		session, err = yamux.Server(conn, nil)

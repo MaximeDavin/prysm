@@ -5,17 +5,17 @@ import (
 
 	"github.com/pkg/errors"
 
-	"libp2p/config"
-	"libp2p/core/crypto"
-	"libp2p/core/host"
-	"libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/config"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	ma "github.com/multiformats/go-multiaddr"
 )
 
 type Option = config.Option
 
-func New(opts ...Option) (*host.Host, error) {
+func New(opts ...Option) (host.Host, error) {
 	cfg := config.NewConfig()
 	err := cfg.Apply(opts...)
 	if err != nil {

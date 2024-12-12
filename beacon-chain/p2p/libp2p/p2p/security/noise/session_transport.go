@@ -9,9 +9,9 @@ import (
 	"context"
 	"net"
 
-	"libp2p/core/peer"
-	"libp2p/core/protocol"
-	"libp2p/p2p/security/noise/pb"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-libp2p/p2p/security/noise/pb"
 
 	manet "github.com/multiformats/go-multiaddr/net"
 )

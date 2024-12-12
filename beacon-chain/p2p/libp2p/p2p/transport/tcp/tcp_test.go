@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"libp2p/config"
-	"libp2p/core/crypto"
-	"libp2p/core/peer"
-	"libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/config"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/transport"
 
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/prysmaticlabs/prysm/v5/testing/require"

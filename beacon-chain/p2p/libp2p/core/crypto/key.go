@@ -7,7 +7,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"libp2p/core/crypto/pb"
+	"github.com/libp2p/go-libp2p/core/crypto/pb"
 
 	"github.com/pkg/errors"
 

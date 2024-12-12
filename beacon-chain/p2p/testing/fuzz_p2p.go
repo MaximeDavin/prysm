@@ -9,6 +9,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/transport"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/encoder"
 	"github.com/prysmaticlabs/prysm/v5/beacon-chain/p2p/peers"
@@ -89,7 +90,7 @@ func (_ *FakeP2P) PublishToTopic(_ context.Context, _ string, _ []byte, _ ...pub
 }
 
 // Send -- fake.
-func (_ *FakeP2P) Send(_ context.Context, _ interface{}, _ string, _ peer.ID) (network.Stream, error) {
+func (_ *FakeP2P) Send(_ context.Context, _ interface{}, _ string, _ peer.ID) (transport.Stream, error) {
 	return nil, nil
 }
 

@@ -4,25 +4,25 @@ import (
 	"testing"
 	"time"
 
-	"libp2p"
-	"libp2p/config"
-	"libp2p/core/crypto"
-	"libp2p/core/host"
-	"libp2p/core/peer"
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/config"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	"github.com/prysmaticlabs/prysm/v5/testing/require"
 
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-func CreateHost(t *testing.T) *host.Host {
+func CreateHost(t *testing.T) host.Host {
 	t.Helper()
 	h, err := libp2p.New(createOptions(t, time.Second*5)...)
 	require.NoError(t, err)
 	return h
 }
 
-func CreateHostWithTimeout(t *testing.T, timeout time.Duration) *host.Host {
+func CreateHostWithTimeout(t *testing.T, timeout time.Duration) host.Host {
 	h, err := libp2p.New(createOptions(t, timeout)...)
 
 	require.NoError(t, err)

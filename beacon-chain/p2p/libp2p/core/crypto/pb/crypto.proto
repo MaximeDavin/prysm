@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package crypto.pb;
 
-option go_package = "libp2p/crypto/pb";
+option go_package = "github.com/libp2p/go-libp2p/crypto/pb";
 
 enum KeyType {
 	Secp256k1 = 2;

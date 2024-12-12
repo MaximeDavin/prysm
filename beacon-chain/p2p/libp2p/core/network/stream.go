@@ -3,29 +3,30 @@ package network
 import (
 	"time"
 
-	"libp2p/core/protocol"
-	"libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/direction"
 )
 
 type Stream struct {
 	stream   transport.Stream
-	conn     *Conn
+	conn     *NetworkConn
 	protocol protocol.ID
 	stat     Stats
 }
 
-func NewStream(s transport.Stream, conn *Conn, proto protocol.ID, direction transport.Direction) *Stream {
+func NewStream(s transport.Stream, conn *NetworkConn, proto protocol.ID, dir direction.Direction) *Stream {
 	stream := &Stream{
 		stream: s,
 		conn:   conn,
-		stat:   Stats{Direction: direction},
+		stat:   Stats{Direction: dir},
 	}
 	stream.SetProtocol(proto)
 	return stream
 }
 
 // Conn returns the Conn associated with this stream, as an network.Conn
-func (s *Stream) Conn() *Conn {
+func (s *Stream) Conn() *NetworkConn {
 	return s.conn
 }
 

@@ -6,12 +6,13 @@ import (
 	"sync"
 	"time"
 
-	"libp2p/config"
-	"libp2p/core/peer"
-	"libp2p/core/peerstore"
-	"libp2p/core/protocol"
-	"libp2p/core/transport"
-	"libp2p/p2p/transport/tcp"
+	"github.com/libp2p/go-libp2p/config"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
+	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/direction"
+	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 
 	"github.com/pkg/errors"
 
@@ -20,11 +21,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var log = logrus.WithField("prefix", "libp2p")
+var log = logrus.WithField("prefix", "github.com/libp2p/go-libp2p")
 
 type conns struct {
 	sync.RWMutex
-	m map[peer.ID]*Conn
+	m map[peer.ID]*NetworkConn
 }
 
 type Network struct {
@@ -53,8 +54,8 @@ func NewNetwork(cfg *config.Config) (*Network, error) {
 		dialTimeout:  cfg.DialTimeout,
 	}
 
-	n.inConns.m = make(map[peer.ID]*Conn)
-	n.outConns.m = make(map[peer.ID]*Conn)
+	n.inConns.m = make(map[peer.ID]*NetworkConn)
+	n.outConns.m = make(map[peer.ID]*NetworkConn)
 
 	// TODO(quic)
 	// if cfg.UseQuic {
@@ -109,9 +110,9 @@ func (n *Network) Connect(ctx context.Context, pinfo peer.AddrInfo) error {
 // }
 
 // Store the connection to this peer
-func (n *Network) addConn(pid peer.ID, conn *Conn, dir transport.Direction) {
+func (n *Network) addConn(pid peer.ID, conn *NetworkConn, dir direction.Direction) {
 	var conns *conns
-	if dir == transport.DirInbound {
+	if dir == direction.DirInbound {
 		conns = &n.inConns
 	} else {
 		conns = &n.outConns
@@ -127,7 +128,7 @@ func (n *Network) addConn(pid peer.ID, conn *Conn, dir transport.Direction) {
 
 }
 
-func getConn(conns *conns, pid peer.ID) (*Conn, bool) {
+func getConn(conns *conns, pid peer.ID) (*NetworkConn, bool) {
 	conns.RLock()
 	defer conns.RUnlock()
 
@@ -136,7 +137,7 @@ func getConn(conns *conns, pid peer.ID) (*Conn, bool) {
 }
 
 // Check if we already have a valid connection available and return it
-func (n *Network) getExistingConn(pid peer.ID, conns ...*conns) (*Conn, bool) {
+func (n *Network) getExistingConn(pid peer.ID, conns ...*conns) (*NetworkConn, bool) {
 	for _, c := range conns {
 		conn, ok := getConn(c, pid)
 		if ok && !conn.conn.IsClosed() {
@@ -146,7 +147,7 @@ func (n *Network) getExistingConn(pid peer.ID, conns ...*conns) (*Conn, bool) {
 	return nil, false
 }
 
-func (n *Network) DialPeer(ctx context.Context, pid peer.ID) (*Conn, error) {
+func (n *Network) DialPeer(ctx context.Context, pid peer.ID) (*NetworkConn, error) {
 	addrs := n.peerstore.Addrs(pid)
 	if len(addrs) == 0 {
 		return nil, errors.Errorf("peer %s has no addresses associated", pid)
@@ -169,8 +170,8 @@ func (n *Network) DialPeer(ctx context.Context, pid peer.ID) (*Conn, error) {
 			if conn, err := n.tcpTransport.Dial(ctx, addr, pid); err != nil {
 				log.WithError(err).Infof("Failed to dial peer %s with address %s", pid, addr)
 			} else {
-				c := NewConn(conn, n, transport.DirOutbound)
-				n.addConn(pid, c, transport.DirOutbound)
+				c := NewConn(conn, n, direction.DirOutbound)
+				n.addConn(pid, c, direction.DirOutbound)
 				return c, nil
 			}
 		} else {
@@ -244,8 +245,8 @@ func (n *Network) serve(l transport.Listener) error {
 			return err
 		}
 		// Store the connection
-		c := NewConn(conn, n, transport.DirInbound)
-		n.addConn(conn.RemotePeer(), c, transport.DirInbound)
+		c := NewConn(conn, n, direction.DirInbound)
+		n.addConn(conn.RemotePeer(), c, direction.DirInbound)
 
 		go func(conn transport.UpgradedConn) {
 			defer conn.Close()
@@ -287,7 +288,7 @@ func (n *Network) NewStream(ctx context.Context, pid peer.ID, protos ...protocol
 		return nil, err
 	}
 
-	return NewStream(stream, c, proto, transport.DirOutbound), nil
+	return NewStream(stream, c, proto, direction.DirOutbound), nil
 }
 
 func (n *Network) SetStreamHandler(proto protocol.ID, handler StreamHandler) {
@@ -433,12 +434,12 @@ func (n *Network) unlockConns() {
 	}
 }
 
-func (n *Network) ConnsToPeer(pid peer.ID) []*Conn {
+func (n *Network) ConnsToPeer(pid peer.ID) []*NetworkConn {
 	connsm := n.getConns()
 	n.rLockConns()
 	defer n.rUnlockConns()
 
-	res := make([]*Conn, 0, len(connsm))
+	res := make([]*NetworkConn, 0, len(connsm))
 	for _, conns := range connsm {
 		if conn, ok := conns.m[pid]; ok {
 			res = append(res, conn)
@@ -454,7 +455,7 @@ func (n *Network) ConnsToPeer(pid peer.ID) []*Conn {
 // return res
 // }
 
-func (n *Network) Conns() []*Conn {
+func (n *Network) Conns() []*NetworkConn {
 	// n.conns.RLock()
 	// defer n.conns.RUnlock()
 
@@ -468,7 +469,7 @@ func (n *Network) Conns() []*Conn {
 	n.rLockConns()
 	defer n.rUnlockConns()
 
-	res := make([]*Conn, 0, len(connsm))
+	res := make([]*NetworkConn, 0, len(connsm))
 	for _, conns := range connsm {
 		for _, conn := range conns.m {
 			res = append(res, conn)

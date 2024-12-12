@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/core/transport"
 
 	"github.com/prysmaticlabs/prysm/v5/testing/require"
 )

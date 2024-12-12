@@ -1,7 +1,7 @@
 package network
 
-import "libp2p/core/transport"
+import "github.com/libp2p/go-libp2p/direction"
 
 type Stats struct {
-	Direction transport.Direction
+	Direction direction.Direction
 }

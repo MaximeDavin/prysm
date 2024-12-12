@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"libp2p"
-	"libp2p/core/crypto"
-	"libp2p/core/network"
-	"libp2p/p2p/security/noise"
-	"libp2p/p2p/transport/tcp"
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/p2p/security/noise"
+	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 
 	"github.com/prysmaticlabs/prysm/v5/runtime/version"
 	"github.com/prysmaticlabs/prysm/v5/testing/require"

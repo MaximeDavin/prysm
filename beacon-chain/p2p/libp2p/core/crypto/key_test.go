@@ -3,7 +3,7 @@ package crypto
 import (
 	"testing"
 
-	"libp2p/core/crypto/pb"
+	"github.com/libp2p/go-libp2p/core/crypto/pb"
 
 	"github.com/prysmaticlabs/prysm/v5/testing/require"
 )

@@ -3,7 +3,7 @@ package tls
 import (
 	"crypto/tls"
 
-	ic "libp2p/core/crypto"
+	ic "github.com/libp2p/go-libp2p/core/crypto"
 )
 
 // Identity is used to secure connections

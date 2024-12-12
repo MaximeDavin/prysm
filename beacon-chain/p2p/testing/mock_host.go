@@ -23,8 +23,8 @@ func (_ *MockHost) ID() peer.ID {
 }
 
 // Peerstore --
-func (_ *MockHost) Peerstore() peerstore.Peerstore {
-	return nil
+func (_ *MockHost) Peerstore() peerstore.PeerStore {
+	return peerstore.PeerStore{}
 }
 
 // Addrs --
@@ -34,7 +34,7 @@ func (m *MockHost) Addrs() []ma.Multiaddr {
 
 // Network --
 func (_ *MockHost) Network() network.Network {
-	return nil
+	return network.Network{}
 }
 
 // Mux --
@@ -59,7 +59,7 @@ func (_ *MockHost) RemoveStreamHandler(_ protocol.ID) {}
 
 // NewStream --
 func (_ *MockHost) NewStream(_ context.Context, _ peer.ID, _ ...protocol.ID) (network.Stream, error) {
-	return nil, nil
+	return network.Stream{}, nil
 }
 
 // Close --

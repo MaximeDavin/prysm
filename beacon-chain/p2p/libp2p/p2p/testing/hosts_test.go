@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"libp2p"
-	"libp2p/core/crypto"
-	"libp2p/core/host"
-	"libp2p/core/peer"
-	"libp2p/core/transport"
-	"libp2p/p2p/security/noise"
-	"libp2p/p2p/transport/tcp"
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/p2p/security/noise"
+	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/prysmaticlabs/prysm/v5/runtime/version"
@@ -54,7 +54,7 @@ var transportsToTest = []TransportTestCase{
 			}
 			h, err := libp2p.New(libp2pOpts...)
 			require.NoError(t, err)
-			return *h
+			return h
 		},
 	},
 }
@@ -126,7 +126,7 @@ func TestBigPing(t *testing.T) {
 
 // TestLotsOfDataManyStreams tests sending a lot of data on multiple streams.
 func TestLotsOfDataManyStreams(t *testing.T) {
-	// Skip on windows because of https://github.com/libp2p/go-libp2p/issues/2341
+	// Skip on windows because of https://"github.com/libp2p/go-libp2p/issues/2341
 	if runtime.GOOS == "windows" {
 		t.Skip("Skipping on windows because of https://github.com/libp2p/go-libp2p/issues/2341")
 	}

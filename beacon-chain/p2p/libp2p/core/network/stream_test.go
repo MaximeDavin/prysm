@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"libp2p/core/network"
-	"libp2p/core/protocol"
-	"libp2p/core/transport"
-	tests_utils "libp2p/p2p/testing"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-libp2p/direction"
+	tests_utils "github.com/libp2p/go-libp2p/p2p/testing"
 
 	"github.com/prysmaticlabs/prysm/v5/testing/require"
 	"go.uber.org/mock/gomock"
@@ -18,7 +18,7 @@ func TestStreamInterface(t *testing.T) {
 	defer ctrl.Finish()
 
 	m := tests_utils.NewMockStream(ctrl)
-	s := network.NewStream(m, nil, "", transport.DirInbound)
+	s := network.NewStream(m, nil, "", direction.DirInbound)
 
 	testStr := []byte("test")
 
@@ -51,21 +51,21 @@ func TestStreamInterface(t *testing.T) {
 }
 
 func TestStreamConn(t *testing.T) {
-	c := network.NewConn(nil, nil, transport.DirInbound)
-	s := network.NewStream(nil, c, "", transport.DirInbound)
+	c := network.NewConn(nil, nil, direction.DirInbound)
+	s := network.NewStream(nil, c, "", direction.DirInbound)
 
 	require.Equal(t, c, s.Conn())
 }
 
 func TestStreamProtocol(t *testing.T) {
-	s := network.NewStream(nil, nil, "init", transport.DirInbound)
+	s := network.NewStream(nil, nil, "init", direction.DirInbound)
 	require.Equal(t, protocol.ID("init"), s.Protocol())
 	s.SetProtocol("modified")
 	require.Equal(t, protocol.ID("modified"), s.Protocol())
 }
 
 func TestStreamStat(t *testing.T) {
-	s := network.NewStream(nil, nil, "", transport.DirInbound)
+	s := network.NewStream(nil, nil, "", direction.DirInbound)
 
-	require.Equal(t, network.Stats{Direction: transport.DirInbound}, s.Stat())
+	require.Equal(t, network.Stats{Direction: direction.DirInbound}, s.Stat())
 }

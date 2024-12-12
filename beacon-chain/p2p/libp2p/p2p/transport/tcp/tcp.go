@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
-	"libp2p/config"
-	"libp2p/core/peer"
-	"libp2p/core/transport"
-	"libp2p/muxer/yamux"
-	"libp2p/p2p/security/noise"
+	"github.com/libp2p/go-libp2p/config"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/direction"
+	"github.com/libp2p/go-libp2p/muxer/yamux"
+	"github.com/libp2p/go-libp2p/p2p/security/noise"
 
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
@@ -76,5 +77,5 @@ func (t *TcpTransport) Dial(ctx context.Context, addr ma.Multiaddr, pid peer.ID)
 	if err != nil {
 		return nil, err
 	}
-	return Upgrade(ctx, t, conn, pid, transport.DirOutbound)
+	return Upgrade(ctx, t, conn, pid, direction.DirOutbound)
 }

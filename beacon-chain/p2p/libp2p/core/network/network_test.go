@@ -7,15 +7,15 @@ import (
 	"testing"
 	"time"
 
-	"libp2p"
-	"libp2p/core/crypto"
-	"libp2p/core/host"
-	"libp2p/core/network"
-	"libp2p/core/peer"
-	"libp2p/core/protocol"
-	"libp2p/core/transport"
-	tests_utils "libp2p/p2p/testing"
-	"libp2p/p2p/transport/tcp"
+	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/network"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
+	"github.com/libp2p/go-libp2p/core/transport"
+	tests_utils "github.com/libp2p/go-libp2p/p2p/testing"
+	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 
 	"github.com/prysmaticlabs/prysm/v5/testing/require"
 
@@ -26,7 +26,7 @@ import (
 
 const SLEEP_TIME = 50 * time.Millisecond
 
-func createHosts(t *testing.T) (*host.Host, *host.Host, *peer.AddrInfo, *peer.AddrInfo) {
+func createHosts(t *testing.T) (host.Host, host.Host, *peer.AddrInfo, *peer.AddrInfo) {
 	t.Helper()
 
 	h1 := tests_utils.CreateHost(t)
@@ -404,7 +404,7 @@ func TestNotify(t *testing.T) {
 
 	done := make(chan any, 2)
 	h1.Network().Notify(&network.NotifyBundle{
-		ConnectedF: func(n network.Network, conn network.Conn) {
+		ConnectedF: func(n network.Network, conn network.NetworkConn) {
 			done <- struct{}{}
 		},
 	})

@@ -6,10 +6,11 @@ import (
 	"io"
 	"time"
 
-	"libp2p/core/peer"
-	"libp2p/core/transport"
-	"libp2p/muxer/yamux"
-	"libp2p/p2p/security/noise"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/direction"
+	"github.com/libp2p/go-libp2p/muxer/yamux"
+	"github.com/libp2p/go-libp2p/p2p/security/noise"
 
 	"github.com/pkg/errors"
 
@@ -19,23 +20,23 @@ import (
 
 type conn struct {
 	transport.MuxedConn
-	transport.SecureConnMixin
-	transport.ConnMultiaddrsMixin
+	transport.ConnSecure
+	transport.ConnMultiaddrs
 }
 
 var _ transport.UpgradedConn = &conn{}
 
-func Upgrade(ctx context.Context, t *TcpTransport, rawConn manet.Conn, pid peer.ID, direction transport.Direction) (transport.UpgradedConn, error) {
+func Upgrade(ctx context.Context, t *TcpTransport, rawConn manet.Conn, pid peer.ID, dir direction.Direction) (transport.UpgradedConn, error) {
 	if err := rawConn.SetDeadline(time.Now().Add(t.TcpTransportOptions.AcceptTimeout)); err != nil {
 		return nil, err
 	}
 
-	sconn, err := upgradeSecurity(ctx, t, rawConn, pid, direction)
+	sconn, err := upgradeSecurity(ctx, t, rawConn, pid, dir)
 	if err != nil {
 		return nil, err
 	}
 
-	mconn, err := upgradeStream(t, sconn, pid, direction)
+	mconn, err := upgradeStream(t, sconn, pid, dir)
 	if err != nil {
 		return nil, err
 	}
@@ -43,17 +44,17 @@ func Upgrade(ctx context.Context, t *TcpTransport, rawConn manet.Conn, pid peer.
 	// stat := Stats{Direction: direction}
 
 	c := &conn{
-		MuxedConn:           mconn,
-		SecureConnMixin:     sconn,
-		ConnMultiaddrsMixin: rawConn,
+		MuxedConn:      mconn,
+		ConnSecure:     sconn,
+		ConnMultiaddrs: rawConn,
 		// stat:                stat,
 	}
 
 	return c, nil
 }
 
-func negotiateProtocol(muxer *mss.MultistreamMuxer[string], supported string, conn io.ReadWriteCloser, direction transport.Direction) (string, error) {
-	if direction == transport.DirInbound {
+func negotiateProtocol(muxer *mss.MultistreamMuxer[string], supported string, conn io.ReadWriteCloser, dir direction.Direction) (string, error) {
+	if dir == direction.DirInbound {
 		proto, _, err := muxer.Negotiate(conn)
 		if err != nil && errors.Is(err, io.EOF) {
 			return "", fmt.Errorf("connection closed by dialer, possibly due to protocols not supported: %v", muxer.Protocols())
@@ -72,8 +73,8 @@ func negotiateProtocol(muxer *mss.MultistreamMuxer[string], supported string, co
 	}
 }
 
-func secure(ctx context.Context, t *TcpTransport, conn manet.Conn, pid peer.ID, direction transport.Direction) (transport.SecureConn, error) {
-	if direction == transport.DirInbound {
+func secure(ctx context.Context, t *TcpTransport, conn manet.Conn, pid peer.ID, dir direction.Direction) (transport.SecureConn, error) {
+	if dir == direction.DirInbound {
 		s, err := t.Noise.SecureInbound(ctx, conn, pid)
 		if err != nil {
 			return nil, err
@@ -88,10 +89,10 @@ func secure(ctx context.Context, t *TcpTransport, conn manet.Conn, pid peer.ID, 
 	}
 }
 
-func upgradeSecurity(ctx context.Context, t *TcpTransport, rawConn manet.Conn, pid peer.ID, direction transport.Direction) (transport.SecureConn, error) {
+func upgradeSecurity(ctx context.Context, t *TcpTransport, rawConn manet.Conn, pid peer.ID, dir direction.Direction) (transport.SecureConn, error) {
 	log.Debugf("peer %s security protocol negociation in progress...", pid)
 
-	proto, err := negotiateProtocol(t.SecurityMuxer, t.SecuritySupported, rawConn, direction)
+	proto, err := negotiateProtocol(t.SecurityMuxer, t.SecuritySupported, rawConn, dir)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +100,7 @@ func upgradeSecurity(ctx context.Context, t *TcpTransport, rawConn manet.Conn, p
 	if proto != noise.ID {
 		return nil, errors.Errorf("security protocol not supported, only %s is supported", noise.ID)
 	}
-	sconn, err := secure(ctx, t, rawConn, pid, direction)
+	sconn, err := secure(ctx, t, rawConn, pid, dir)
 	if err != nil {
 		return nil, err
 	}
@@ -108,10 +109,10 @@ func upgradeSecurity(ctx context.Context, t *TcpTransport, rawConn manet.Conn, p
 	return sconn, nil
 }
 
-func upgradeStream(t *TcpTransport, sconn transport.SecureConn, pid peer.ID, direction transport.Direction) (transport.MuxedConn, error) {
+func upgradeStream(t *TcpTransport, sconn transport.SecureConn, pid peer.ID, dir direction.Direction) (transport.MuxedConn, error) {
 	log.Debugf("peer %s stream multiplexing protocol negotiation in progress...", pid)
 
-	proto, err := negotiateProtocol(t.StreamMuxer, t.StreamsSupported, sconn, direction)
+	proto, err := negotiateProtocol(t.StreamMuxer, t.StreamsSupported, sconn, dir)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +120,7 @@ func upgradeStream(t *TcpTransport, sconn transport.SecureConn, pid peer.ID, dir
 	if proto != yamux.ID {
 		return nil, errors.Errorf("stream multiplexing protocol not supported, only %s is supported", yamux.ID)
 	}
-	upconn, err := yamux.Multiplex(sconn, direction)
+	upconn, err := yamux.Multiplex(sconn, dir)
 	if err != nil {
 		return nil, err
 	}

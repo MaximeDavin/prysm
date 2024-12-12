@@ -4,8 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"libp2p/core/transport"
-
+	"github.com/libp2p/go-libp2p/direction"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
 	"github.com/prysmaticlabs/prysm/v5/testing/require"
@@ -110,7 +109,7 @@ func TestUpgrade(t *testing.T) {
 			require.NoError(t, err)
 
 			tr, _ := createTransportWithOptions(t, tC.trOpts)
-			_, err = Upgrade(context.Background(), tr, conn, pid, transport.DirOutbound)
+			_, err = Upgrade(context.Background(), tr, conn, pid, direction.DirOutbound)
 			if tC.error != "" {
 				require.ErrorContains(t, tC.error, err)
 			} else {
@@ -131,7 +130,7 @@ func TestUpgrade(t *testing.T) {
 			conn, err := l.Accept()
 			require.NoError(t, err)
 
-			_, err = Upgrade(context.Background(), ltcp, conn, "", transport.DirInbound)
+			_, err = Upgrade(context.Background(), ltcp, conn, "", direction.DirInbound)
 			if tC.error != "" {
 				require.ErrorContains(t, tC.error, err)
 			} else {
@@ -153,6 +152,6 @@ func TestSetDeadlineError(t *testing.T) {
 	tr, _ := createTransport(t)
 	// We close the connection so SetDeadline fails
 	conn.Close()
-	_, err = Upgrade(context.Background(), tr, conn, "", transport.DirInbound)
+	_, err = Upgrade(context.Background(), tr, conn, "", direction.DirInbound)
 	require.ErrorContains(t, "closed", err)
 }

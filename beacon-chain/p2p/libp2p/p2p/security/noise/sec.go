@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"net"
 
-	"libp2p/core/peer"
-	"libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/transport"
 )
 
 type SecureConn interface {
 	net.Conn
-	transport.SecureConnMixin
+	transport.ConnSecure
 }
 
 type ErrPeerIDMismatch struct {

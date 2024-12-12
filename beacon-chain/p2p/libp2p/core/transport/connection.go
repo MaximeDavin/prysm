@@ -5,8 +5,8 @@ import (
 	"io"
 	"net"
 
-	"libp2p/core/crypto"
-	"libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -14,13 +14,13 @@ import (
 // A UpgradedConn represents a connection that has been secured and multiplexed
 type UpgradedConn interface {
 	MuxedConn
-	SecureConnMixin
-	ConnMultiaddrsMixin
+	ConnSecure
+	ConnMultiaddrs
 }
 
 // ConnSecurity is the interface that one can mix into a connection interface to
 // give it the security methods.
-type SecureConnMixin interface {
+type ConnSecure interface {
 	// LocalPeer returns our peer ID
 	LocalPeer() peer.ID
 	// RemotePeer returns the peer ID of the remote peer.
@@ -32,12 +32,12 @@ type SecureConnMixin interface {
 // A UpgradedConn represents a connection that has been secured
 type SecureConn interface {
 	net.Conn
-	SecureConnMixin
+	ConnSecure
 }
 
 // ConnMultiaddrs is an interface mixin for connection types that provide multiaddr
 // addresses for the endpoints.
-type ConnMultiaddrsMixin interface {
+type ConnMultiaddrs interface {
 	// LocalMultiaddr returns the local Multiaddr associated
 	// with this connection
 	LocalMultiaddr() ma.Multiaddr

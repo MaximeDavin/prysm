@@ -3,7 +3,8 @@ package tcp
 import (
 	"context"
 
-	"libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/core/transport"
+	"github.com/libp2p/go-libp2p/direction"
 
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr/net"
@@ -83,7 +84,7 @@ func (l *TcpListener) upgrade(conn manet.Conn) {
 	ctx, cancel := context.WithTimeout(context.Background(), l.t.AcceptTimeout)
 	defer cancel()
 
-	sconn, err := Upgrade(ctx, l.t, conn, "", transport.DirInbound)
+	sconn, err := Upgrade(ctx, l.t, conn, "", direction.DirInbound)
 	if err != nil {
 		l.errs <- err
 		return
